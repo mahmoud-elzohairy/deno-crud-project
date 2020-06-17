@@ -1,4 +1,6 @@
 import User from "../Models/User.ts";
+import Validator from "../Validator.ts";
+import Response from "../Handler/response.ts";
 
 export default {
   async usersCount(ctx: any) {
@@ -26,20 +28,24 @@ export default {
   },
 
   async storeOne(ctx: any) {
-    const { value } = await ctx.request.body();
-
-    const insertId = await User.insertOne({
-      name: value.name,
-      age: value.age,
-    });
-
-    const newUser = await User.findOne(insertId.$oid);
-
-    ctx.response.body = {
-      status: true,
-      data: newUser,
-      message: "New record inserted successfully.",
+    const rules: any = {
+      username: "required|string|min:6|max:20",
+      email: "required|string|email|unique:users",
+      age: "required|numeric",
     };
+
+    const value = await Validator.validate(ctx, rules);
+
+    if (value) {
+      const insertId = await User.insertOne(value);
+      const newUser = await User.findOne(insertId.$oid);
+
+      Response.successResponse(
+        ctx,
+        newUser,
+        "New record inserted successfully.",
+      );
+    }
   },
 
   async storeMany(ctx: any) {
@@ -65,10 +71,7 @@ export default {
 
     const updatedRow = await User.updateOne(
       { _id: { $oid: ctx.params.id } },
-      {
-        name: value.name,
-        age: value.age,
-      },
+      value,
     );
 
     const user = await User.findOne(ctx.params.id);

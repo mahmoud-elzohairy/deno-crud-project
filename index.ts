@@ -10,6 +10,8 @@ const env = config();
 
 app.use(web.routes());
 app.use(api.routes());
+app.use(web.allowedMethods());
+app.use(api.allowedMethods());
 app.use(notFoundPage);
 
 console.log("Server is running");
